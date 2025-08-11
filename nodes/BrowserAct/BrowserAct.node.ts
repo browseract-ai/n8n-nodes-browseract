@@ -164,7 +164,7 @@ export class BrowserAct implements INodeType {
 
 				const response = await browserActRequest(this, {
 					method: 'GET',
-					endpoint: `/workflow/get-workflow-config?workflow_id=${workflowId}`,
+					endpoint: `/workflow/get-workflow?workflow_id=${workflowId}`,
 				});
 
 				const properties =
