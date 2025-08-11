@@ -10,8 +10,6 @@ This is an n8n community node that integrates [BrowserAct](https://www.browserac
 - [Operations](#operations)
 - [Credentials](#credentials)
 - [Compatibility](#compatibility)
-- [Usage](#usage)
-- [Screenshots](#screenshots)
 - [Resources](#resources)
 - [Version History](#version-history)
 
