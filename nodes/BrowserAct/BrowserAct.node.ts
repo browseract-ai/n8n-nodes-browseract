@@ -167,49 +167,51 @@ export class BrowserAct implements INodeType {
 					endpoint: `/workflow/get-workflow?workflow_id=${workflowId}`,
 				});
 
-				const properties =
-					response?.dsl?.nodes?.find((item: any) => item.type === 'INPUT_PARAMETERS')?.properties ||
-					{};
-
 				const common = {
 					type: 'string',
-					required: true,
 					display: true,
 					defaultMatch: true,
 				};
 
-				const inputParameters = (properties?.input_parameters?.value || []).map((item: any) => {
-					const { name } = item || {};
+				const inputParameters = (response?.input_parameters || []).map((item: any) => {
+					const { name, default_enabled } = item || {};
+
+					const required = !default_enabled;
+
 					return {
 						...common,
 						id: `input-${name}`,
-						displayName: name,
+						displayName: required ? `* ${name}` : name,
+						required,
+						description: required
+							? `${name} is required`
+							: 'If left blank, the default value defined in BrowserAct will be used.',
 					};
 				});
-				const credentials = (properties?.credentials?.value || []).reduce(
-					(acc: any[], item: any) => {
-						const { platform } = item || {};
-						return [
-							{
-								...common,
-								id: `password-${platform}`,
-								displayName: `Password: ${platform}`,
-								type: 'string',
-							},
-							{
-								...common,
-								id: `account-${platform}`,
-								displayName: `Account: ${platform}`,
-								type: 'string',
-							},
-							...acc,
-						];
-					},
-					[],
-				);
+				// const credentials = (properties?.credentials?.value || []).reduce(
+				// 	(acc: any[], item: any) => {
+				// 		const { platform } = item || {};
+				// 		return [
+				// 			{
+				// 				...common,
+				// 				id: `password-${platform}`,
+				// 				displayName: `Password: ${platform}`,
+				// 				type: 'string',
+				// 			},
+				// 			{
+				// 				...common,
+				// 				id: `account-${platform}`,
+				// 				displayName: `Account: ${platform}`,
+				// 				type: 'string',
+				// 			},
+				// 			...acc,
+				// 		];
+				// 	},
+				// 	[],
+				// );
 
 				return {
-					fields: [...inputParameters, ...credentials],
+					fields: [...inputParameters],
 				};
 			},
 		},
@@ -284,34 +286,37 @@ export class BrowserAct implements INodeType {
 				const missingFields: string[] = [];
 
 				const input_parameters: { name: string; value: string }[] = [];
-				const credentialsMap: any = {};
+				// const credentialsMap: any = {};
 
 				workflowConfig?.schema?.forEach((item: any) => {
-					if (workflowConfig.value[item.id]?.trim()) {
-						const value = workflowConfig.value[item.id].trim();
-						if (item.id.startsWith('account-')) {
-							const key = item.id.replace('account-', '');
+					const value = workflowConfig.value[item.id]?.trim();
 
-							if (!credentialsMap[key]) {
-								credentialsMap[key] = {};
-							}
-							credentialsMap[key]['account'] = value;
-						}
-						if (item.id.startsWith('password-')) {
-							const key = item.id.replace('password-', '');
+					if (value) {
+						// if (item.id.startsWith('account-')) {
+						// 	const key = item.id.replace('account-', '');
 
-							if (!credentialsMap[key]) {
-								credentialsMap[key] = {};
-							}
-							credentialsMap[key]['password'] = value;
-						}
+						// 	if (!credentialsMap[key]) {
+						// 		credentialsMap[key] = {};
+						// 	}
+						// 	credentialsMap[key]['account'] = value;
+						// }
+						// if (item.id.startsWith('password-')) {
+						// 	const key = item.id.replace('password-', '');
+
+						// 	if (!credentialsMap[key]) {
+						// 		credentialsMap[key] = {};
+						// 	}
+						// 	credentialsMap[key]['password'] = value;
+						// }
 						if (item.id.startsWith('input-')) {
 							input_parameters.push({
 								name: item.id.replace('input-', ''),
 								value,
 							});
 						}
-					} else {
+					}
+
+					if (item.required && !value) {
 						missingFields.push(item.displayName);
 					}
 				});
@@ -325,11 +330,11 @@ export class BrowserAct implements INodeType {
 				runTaskBody = {
 					workflow_id: workflowId,
 					input_parameters,
-					credentials: Object.entries(credentialsMap).map(([platform, info]) => ({
-						platform,
-						account: (info as any)?.account,
-						password: (info as any)?.password,
-					})),
+					// credentials: Object.entries(credentialsMap).map(([platform, info]) => ({
+					// 	platform,
+					// 	account: (info as any)?.account,
+					// 	password: (info as any)?.password,
+					// })),
 				};
 
 				endpointType = 'workflow';
