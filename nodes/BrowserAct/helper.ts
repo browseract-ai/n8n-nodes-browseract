@@ -1,6 +1,8 @@
 import { IExecuteFunctions, ILoadOptionsFunctions } from 'n8n-workflow';
 
-const BASE_URL = 'https://api-test03.browseract.com/v2';
+export const BASE_URL = 'https://api-test03.browseract.com';
+
+export const BASE_URL_VERSION = '/v2';
 
 const COMMON_HEADERS = { 'api-channel-ak': 'n8nak' };
 
@@ -27,7 +29,7 @@ export async function browserActRequest(
 	return context.helpers.httpRequestWithAuthentication.call(context, 'browserActApi', {
 		method,
 		url: endpoint,
-		baseURL: BASE_URL,
+		baseURL: BASE_URL + BASE_URL_VERSION,
 		headers: { ...COMMON_HEADERS },
 		body,
 		qs,

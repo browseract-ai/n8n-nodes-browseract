@@ -270,6 +270,12 @@ export class BrowserAct implements INodeType {
 			const timeout = Number(this.getNodeParameter('timeout', i) as number) || 3600;
 			const limit = Math.min(Math.ceil((timeout * 1000) / QUERY_DELAY), QUERY_LIMIT);
 
+			if (timeout < 0) {
+				throw new NodeOperationError(this.getNode(), 'Timeout needs to be greater than 0', {
+					itemIndex: i,
+				});
+			}
+
 			let runTaskBody: any = {};
 			let endpointType = 'agent';
 
