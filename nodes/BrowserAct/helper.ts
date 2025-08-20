@@ -1,6 +1,6 @@
 import { IExecuteFunctions, ILoadOptionsFunctions } from 'n8n-workflow';
 
-export const BASE_URL = 'https://api-test03.browseract.com';
+export const BASE_URL = 'https://api.browseract.com';
 
 export const BASE_URL_VERSION = '/v2';
 

@@ -11,7 +11,7 @@ export class BrowserActApi implements ICredentialType {
 
 	displayName = 'BrowserAct API';
 
-	documentationUrl = 'https://www-test03.browseract.com/docs-api';
+	documentationUrl = 'https://www.browseract.com/docs-api';
 
 	properties: INodeProperties[] = [
 		{
