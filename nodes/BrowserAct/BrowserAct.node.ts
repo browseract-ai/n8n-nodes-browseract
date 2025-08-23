@@ -150,7 +150,7 @@ export class BrowserAct implements INodeType {
 				type: 'number',
 				required: true,
 				default: 3600,
-				description: 'Timeout for the run, in seconds',
+				description: 'Timeout for the run, in seconds (default: 3600)',
 			},
 		],
 	};
