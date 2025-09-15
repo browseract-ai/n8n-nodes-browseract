@@ -222,7 +222,7 @@ export class BrowserAct implements INodeType {
 					endpoint: '/workflow/list-workflows',
 					qs: {
 						page: 1,
-						perPage: 500,
+						limit: 500,
 					},
 				});
 
@@ -240,7 +240,7 @@ export class BrowserAct implements INodeType {
 					endpoint: '/agent/list-agents',
 					qs: {
 						page: 1,
-						perPage: 500,
+						limit: 500,
 					},
 				});
 
