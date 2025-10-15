@@ -38,20 +38,7 @@ To use a BrowserAct node, you need to complete the following steps:
 
 ⚠️ **Note:** The API key is sensitive information. Please keep it secure and never share it publicly.
 
-## Compatibility
-
-This node has been tested with n8n version 1.0.0.
-
 ## Resources
 
 - [n8n Community Nodes Documentation](https://docs.n8n.io/integrations/community-nodes/)
 - [BrowserAct API Documentation](http://www.browseract.com/docs-api)
-
-## Version History
-
-### 1.0.0 (Initial Release)
-
-- Basic Operation Support:
-  - Supports the `Run Agent` action, which allows you to execute BrowserAct AI Agents.
-  - Supports the `Run Workflow` action, which allows you to execute BrowserAct multi-step workflows.
-  - Supports custom input parameters (such as prompt, workflow input, and timeout).
