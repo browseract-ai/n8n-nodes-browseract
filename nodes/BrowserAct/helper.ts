@@ -36,8 +36,3 @@ export async function browserActRequest(
 		json: true,
 	});
 }
-
-export function log(...value: any[]) {
-	// @ts-ignore
-	console.log(value);
-}

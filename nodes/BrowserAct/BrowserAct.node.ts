@@ -263,146 +263,146 @@ export class BrowserAct implements INodeType {
 	async execute(this: IExecuteFunctions) {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
+
 		for (let i = 0; i < items.length; i++) {
-			const resource = this.getNodeParameter('resource', i) as string;
-			const operation = this.getNodeParameter('operation', i) as string;
+			try {
+				const resource = this.getNodeParameter('resource', i) as string;
+				const operation = this.getNodeParameter('operation', i) as string;
 
-			const timeout = Number(this.getNodeParameter('timeout', i) as number) || 3600;
-			const limit = Math.min(Math.ceil((timeout * 1000) / QUERY_DELAY), QUERY_LIMIT);
+				const timeout = Number(this.getNodeParameter('timeout', i) as number) || 3600;
+				const limit = Math.min(Math.ceil((timeout * 1000) / QUERY_DELAY), QUERY_LIMIT);
 
-			if (timeout < 0) {
-				throw new NodeOperationError(this.getNode(), 'Timeout needs to be greater than 0', {
-					itemIndex: i,
-				});
-			}
-
-			let runTaskBody: any = {};
-			let endpointType = 'agent';
-
-			if (resource === 'workflow' && operation === 'runWorkflow') {
-				const workflowId = this.getNodeParameter('workflowId', i) as any;
-				const workflowConfig = this.getNodeParameter('workflowConfig', i) as any;
-
-				if (workflowConfig?.value == null) {
-					throw new NodeOperationError(this.getNode(), 'Please select a workflow to run', {
+				if (timeout < 0) {
+					throw new NodeOperationError(this.getNode(), 'Timeout needs to be greater than 0', {
 						itemIndex: i,
 					});
 				}
 
-				const missingFields: string[] = [];
+				let runTaskBody: any = {};
+				let endpointType = 'agent';
 
-				const input_parameters: { name: string; value: string }[] = [];
-				// const credentialsMap: any = {};
+				if (resource === 'workflow' && operation === 'runWorkflow') {
+					const workflowId = this.getNodeParameter('workflowId', i) as any;
+					const workflowConfig = this.getNodeParameter('workflowConfig', i) as any;
 
-				workflowConfig?.schema?.forEach((item: any) => {
-					const value = workflowConfig.value[item.id]?.trim();
+					if (workflowConfig?.value == null) {
+						throw new NodeOperationError(this.getNode(), 'Please select a workflow to run', {
+							itemIndex: i,
+						});
+					}
 
-					if (value) {
-						// if (item.id.startsWith('account-')) {
-						// 	const key = item.id.replace('account-', '');
+					const missingFields: string[] = [];
 
-						// 	if (!credentialsMap[key]) {
-						// 		credentialsMap[key] = {};
-						// 	}
-						// 	credentialsMap[key]['account'] = value;
-						// }
-						// if (item.id.startsWith('password-')) {
-						// 	const key = item.id.replace('password-', '');
+					const input_parameters: { name: string; value: string }[] = [];
 
-						// 	if (!credentialsMap[key]) {
-						// 		credentialsMap[key] = {};
-						// 	}
-						// 	credentialsMap[key]['password'] = value;
-						// }
-						if (item.id.startsWith('input-')) {
-							input_parameters.push({
-								name: item.id.replace('input-', ''),
-								value,
-							});
+					workflowConfig?.schema?.forEach((item: any) => {
+						const value = workflowConfig.value[item.id]?.trim();
+
+						if (value) {
+							if (item.id.startsWith('input-')) {
+								input_parameters.push({
+									name: item.id.replace('input-', ''),
+									value,
+								});
+							}
 						}
+
+						if (item.required && !value) {
+							missingFields.push(item.displayName);
+						}
+					});
+
+					if (missingFields.length) {
+						throw new NodeOperationError(
+							this.getNode(),
+							`Please fill in the required fields: ${missingFields.join(', ')}`,
+						);
 					}
+					runTaskBody = {
+						workflow_id: workflowId,
+						input_parameters,
+					};
 
-					if (item.required && !value) {
-						missingFields.push(item.displayName);
+					endpointType = 'workflow';
+				}
+
+				if (resource === 'agent' && operation === 'runAgent') {
+					const agentId = this.getNodeParameter('agentId', i) as string;
+					const task = this.getNodeParameter('task', i) as string;
+
+					runTaskBody = {
+						task,
+						agent_id: agentId,
+					};
+				}
+
+				const response = await browserActRequest(this, {
+					method: 'POST',
+					endpoint: `/${endpointType}/run-task`,
+					body: runTaskBody,
+				});
+
+				const taskId = response.id;
+
+				if (!taskId) {
+					// push failure for this item
+					returnData.push({
+						json: { error: 'No task id returned', taskId },
+						pairedItem: { item: i },
+					});
+					continue;
+				}
+
+				let taskDetail: any = null;
+				let needStop = true;
+
+				for (let j = 0; j < limit; j++) {
+					await sleep(QUERY_DELAY);
+
+					const detail = await browserActRequest(this, {
+						method: 'GET',
+						endpoint: `/${endpointType}/get-task?task_id=${taskId}`,
+					});
+
+					if (['finished', 'canceled', 'paused', 'failed'].includes(detail.status)) {
+						taskDetail = detail;
+						needStop = false;
+						break;
 					}
-				});
-
-				if (missingFields.length) {
-					throw new NodeOperationError(
-						this.getNode(),
-						`Please fill in the required fields: ${missingFields.join(', ')}`,
-					);
 				}
-				runTaskBody = {
-					workflow_id: workflowId,
-					input_parameters,
-					// credentials: Object.entries(credentialsMap).map(([platform, info]) => ({
-					// 	platform,
-					// 	account: (info as any)?.account,
-					// 	password: (info as any)?.password,
-					// })),
-				};
 
-				endpointType = 'workflow';
-			}
+				if (needStop) {
+					await browserActRequest(this, {
+						method: 'PUT',
+						endpoint: `/${endpointType}/stop-task?task_id=${taskId}`,
+					});
 
-			if (resource === 'agent' && operation === 'runAgent') {
-				const agentId = this.getNodeParameter('agentId', i) as string;
-				const task = this.getNodeParameter('task', i) as string;
-
-				runTaskBody = {
-					task,
-					agent_id: agentId,
-				};
-			}
-
-			const response = await browserActRequest(this, {
-				method: 'POST',
-				endpoint: `/${endpointType}/run-task`,
-				body: runTaskBody,
-			});
-
-			const taskId = response.id;
-
-			if (!taskId) continue;
-
-			let taskDetail: any = null;
-			let needStop = true;
-
-			for (let j = 0; j < limit; j++) {
-				await sleep(QUERY_DELAY);
-
-				const detail = await browserActRequest(this, {
-					method: 'GET',
-					endpoint: `/${endpointType}/get-task?task_id=${taskId}`,
-				});
-
-				if (['finished', 'canceled', 'paused', 'failed'].includes(detail.status)) {
-					taskDetail = detail;
-					needStop = false;
-					break;
+					taskDetail = await browserActRequest(this, {
+						method: 'GET',
+						endpoint: `/${endpointType}/get-task?task_id=${taskId}`,
+					});
 				}
+
+				if (taskDetail) {
+					returnData.push({ json: taskDetail, pairedItem: { item: i } });
+				} else {
+					returnData.push({ json: { error: 'Error', taskId }, pairedItem: { item: i } });
+				}
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error);
+
+				if (this.continueOnFail && this.continueOnFail()) {
+					returnData.push({
+						json: {
+							error: errorMessage,
+						},
+						pairedItem: { item: i },
+					});
+					continue;
+				}
+
+				throw error;
 			}
-
-			if (needStop) {
-				await browserActRequest(this, {
-					method: 'PUT',
-					endpoint: `/${endpointType}/stop-task?task_id=${taskId}`,
-				});
-
-				taskDetail = await browserActRequest(this, {
-					method: 'GET',
-					endpoint: `/${endpointType}/get-task?task_id=${taskId}`,
-				});
-			}
-
-			if (taskDetail) {
-				returnData.push({ json: taskDetail });
-			} else {
-				returnData.push({ json: { error: 'Error', taskId } });
-			}
-
-			return [returnData];
 		}
 
 		return [returnData];
