@@ -4,14 +4,21 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	JsonObject,
-	NodeApiError,
 	NodeConnectionType,
 	NodeOperationError,
 	ResourceMapperFields,
 	sleep,
 } from 'n8n-workflow';
-import { BROWSER_ACT_API, browserActRequest, QUERY_DELAY, QUERY_LIMIT } from './helper';
+import {
+	BROWSER_ACT_API,
+	browserActRequest,
+	isTemplateTask,
+	QUERY_DELAY,
+	QUERY_LIMIT,
+	TASK_TYPE,
+	TASK_TYPE_DEFAULT_VALUE,
+} from './helper';
+import { Template } from './types';
 
 export class BrowserAct implements INodeType {
 	description: INodeTypeDescription = {
@@ -40,24 +47,8 @@ export class BrowserAct implements INodeType {
 				name: 'resource',
 				type: 'options',
 				noDataExpression: true,
-				options: [
-					{ name: 'Agent', value: 'agent' },
-					{ name: 'Workflow', value: 'workflow' },
-				],
-				default: 'agent',
-			},
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				options: [{ name: 'Run an Agent', value: 'runAgent', action: 'Run an agent' }],
-				default: 'runAgent',
-				displayOptions: {
-					show: {
-						resource: ['agent'],
-					},
-				},
+				options: [{ name: 'Workflow', value: 'workflow' }],
+				default: 'workflow',
 			},
 			{
 				displayName: 'Operation',
@@ -74,6 +65,41 @@ export class BrowserAct implements INodeType {
 			},
 			{
 				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
+				displayName: 'Search Workflows From',
+				name: 'type',
+				type: 'options',
+				options: [
+					{ name: 'Template Marketplace', value: TASK_TYPE.TEMPLATE },
+					{ name: 'My Workflows', value: TASK_TYPE.WORKFLOW },
+				],
+				required: true,
+				default: TASK_TYPE_DEFAULT_VALUE,
+				displayOptions: {
+					show: {
+						operation: ['runWorkflow'],
+					},
+				},
+			},
+			{
+				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
+				displayName: 'Template',
+				name: 'templateId',
+				type: 'options',
+				typeOptions: { loadOptionsMethod: 'getTemplateWorkflows' },
+				required: true,
+				default: '',
+				description:
+					'Select a workflow to run. Choose from the list, or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				displayOptions: {
+					show: {
+						operation: ['runWorkflow'],
+						type: [TASK_TYPE.TEMPLATE],
+					},
+				},
+			},
+
+			{
+				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
 				displayName: 'Workflow',
 				name: 'workflowId',
 				type: 'options',
@@ -85,6 +111,7 @@ export class BrowserAct implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['runWorkflow'],
+						type: [TASK_TYPE.WORKFLOW],
 					},
 				},
 			},
@@ -99,7 +126,7 @@ export class BrowserAct implements INodeType {
 				},
 				required: true,
 				typeOptions: {
-					loadOptionsDependsOn: ['workflowId'],
+					loadOptionsDependsOn: ['workflowId', 'templateId'],
 					resourceMapper: {
 						resourceMapperMethod: 'getWorkflowInputs',
 						mode: 'update',
@@ -113,34 +140,15 @@ export class BrowserAct implements INodeType {
 				},
 			},
 			{
-				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
-				displayName: 'Agent',
-				name: 'agentId',
-				type: 'options',
-				typeOptions: {
-					loadOptionsMethod: 'getAgents',
-					allowManualInput: true,
-				},
-				required: true,
-				default: '',
-				description:
-					'Select an agent from the list or enter an ID manually. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				displayName: 'No Sign-in Retention',
+				name: 'open_incognito_mode',
+				type: 'boolean', // boolean 在 n8n UI 中表现为 checkbox
+				default: false,
+				description: 'Whether to use privacy mode',
 				displayOptions: {
 					show: {
-						operation: ['runAgent'],
-					},
-				},
-			},
-			{
-				displayName: 'Task',
-				name: 'task',
-				type: 'string',
-				required: true,
-				default: '',
-				description: 'Use natural language to describe the task you want the Agent to perform',
-				displayOptions: {
-					show: {
-						operation: ['runAgent'],
+						operation: ['runWorkflow'], // 根据你的需要改成适用的 operation
+						type: [TASK_TYPE.WORKFLOW],
 					},
 				},
 			},
@@ -160,59 +168,51 @@ export class BrowserAct implements INodeType {
 			getWorkflowInputs: async function (
 				this: ILoadOptionsFunctions,
 			): Promise<ResourceMapperFields> {
-				const workflowId = this.getNodeParameter('workflowId', 0) as string;
+				try {
+					const type = this.getNodeParameter('type', 0) as string;
+					const workflowId = this.getNodeParameter('workflowId', 0) as string;
+					const templateId = this.getNodeParameter('templateId', 0) as string;
 
-				const response = await browserActRequest(this, {
-					method: 'GET',
-					endpoint: `/workflow/get-workflow?workflow_id=${workflowId}`,
-				});
+					if (isTemplateTask(type) && !templateId) {
+						throw new NodeOperationError(this.getNode(), 'Please select a template workflow!');
+					} else if (!isTemplateTask(type) && !workflowId) {
+						throw new NodeOperationError(this.getNode(), 'Please select a workflow!');
+					}
 
-				const common = {
-					type: 'string',
-					display: true,
-					defaultMatch: true,
-				};
+					const response = await browserActRequest(this, {
+						method: 'GET',
+						endpoint: isTemplateTask(type)
+							? `/workflow/get-official-workflow-template?workflow_template_id=${templateId}`
+							: `/workflow/get-workflow?workflow_id=${workflowId}`,
+					});
 
-				const inputParameters = (response?.input_parameters || []).map((item: any) => {
-					const { name, default_enabled } = item || {};
-
-					const required = !default_enabled;
-
-					return {
-						...common,
-						id: `input-${name}`,
-						displayName: required ? `* ${name}` : name,
-						required,
-						description: required
-							? `${name} is required`
-							: 'If left blank, the default value defined in BrowserAct will be used.',
+					const common = {
+						type: 'string',
+						display: true,
+						defaultMatch: true,
 					};
-				});
-				// const credentials = (properties?.credentials?.value || []).reduce(
-				// 	(acc: any[], item: any) => {
-				// 		const { platform } = item || {};
-				// 		return [
-				// 			{
-				// 				...common,
-				// 				id: `password-${platform}`,
-				// 				displayName: `Password: ${platform}`,
-				// 				type: 'string',
-				// 			},
-				// 			{
-				// 				...common,
-				// 				id: `account-${platform}`,
-				// 				displayName: `Account: ${platform}`,
-				// 				type: 'string',
-				// 			},
-				// 			...acc,
-				// 		];
-				// 	},
-				// 	[],
-				// );
 
-				return {
-					fields: [...inputParameters],
-				};
+					const inputParameters = (response?.input_parameters || []).map((item: any) => {
+						const { name, default_enabled } = item || {};
+
+						const required = !default_enabled;
+
+						return {
+							...common,
+							id: `input-${name}`,
+							displayName: required ? `* ${name}` : name,
+							required,
+							description: required
+								? `${name} is required`
+								: 'If left blank, the default value defined in BrowserAct will be used.',
+						};
+					});
+					return {
+						fields: [...inputParameters],
+					};
+				} catch (error) {
+					return { fields: [] };
+				}
 			},
 		},
 		loadOptions: {
@@ -233,29 +233,22 @@ export class BrowserAct implements INodeType {
 					value: workflow.id,
 				}));
 			},
-
-			async getAgents(this: ILoadOptionsFunctions) {
+			async getTemplateWorkflows(this: ILoadOptionsFunctions) {
 				const response = await browserActRequest(this, {
 					method: 'GET',
-					endpoint: '/agent/list-agents',
+					endpoint: '/workflow/list-official-workflow-templates',
 					qs: {
 						page: 1,
 						limit: 500,
 					},
 				});
 
-				const agents = response.items;
+				const templates: Template[] = response.items || [];
 
-				if (!Array.isArray(agents)) {
-					throw new NodeApiError(this.getNode(), response as unknown as JsonObject);
-				}
-
-				return agents.map((agent) => {
-					return {
-						name: agent.name,
-						value: agent.id,
-					};
-				});
+				return templates.map((template) => ({
+					name: template.name,
+					value: template.templateId,
+				}));
 			},
 		},
 	};
@@ -272,6 +265,8 @@ export class BrowserAct implements INodeType {
 				const timeout = Number(this.getNodeParameter('timeout', i) as number) || 3600;
 				const limit = Math.min(Math.ceil((timeout * 1000) / QUERY_DELAY), QUERY_LIMIT);
 
+				const type = this.getNodeParameter('type', i) as string;
+
 				if (timeout < 0) {
 					throw new NodeOperationError(this.getNode(), 'Timeout needs to be greater than 0', {
 						itemIndex: i,
@@ -279,10 +274,17 @@ export class BrowserAct implements INodeType {
 				}
 
 				let runTaskBody: any = {};
-				let endpointType = 'agent';
+				let endpointType = 'workflow';
 
 				if (resource === 'workflow' && operation === 'runWorkflow') {
-					const workflowId = this.getNodeParameter('workflowId', i) as any;
+					if (isTemplateTask(type)) {
+						runTaskBody.workflow_template_id = this.getNodeParameter('templateId', i) as string;
+					} else {
+						runTaskBody.workflow_id = this.getNodeParameter('workflowId', i) as string;
+						runTaskBody.open_incognito_mode =
+							this.getNodeParameter('open_incognito_mode', i) || false;
+					}
+
 					const workflowConfig = this.getNodeParameter('workflowConfig', i) as any;
 
 					if (workflowConfig?.value == null) {
@@ -318,27 +320,15 @@ export class BrowserAct implements INodeType {
 							`Please fill in the required fields: ${missingFields.join(', ')}`,
 						);
 					}
-					runTaskBody = {
-						workflow_id: workflowId,
-						input_parameters,
-					};
 
-					endpointType = 'workflow';
-				}
-
-				if (resource === 'agent' && operation === 'runAgent') {
-					const agentId = this.getNodeParameter('agentId', i) as string;
-					const task = this.getNodeParameter('task', i) as string;
-
-					runTaskBody = {
-						task,
-						agent_id: agentId,
-					};
+					runTaskBody.input_parameters = input_parameters;
 				}
 
 				const response = await browserActRequest(this, {
 					method: 'POST',
-					endpoint: `/${endpointType}/run-task`,
+					endpoint: isTemplateTask(type)
+						? `/${endpointType}/run-task-by-template`
+						: `/${endpointType}/run-task`,
 					body: runTaskBody,
 				});
 

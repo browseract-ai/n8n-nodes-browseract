@@ -4,9 +4,16 @@ export const BASE_URL = 'https://api.browseract.com';
 
 export const BASE_URL_VERSION = '/v2';
 
-const COMMON_HEADERS = { 'api-channel-ak': 'n8nak' };
+const COMMON_HEADERS = Object.freeze({ 'api-channel-ak': 'n8nak' });
 
 export const BROWSER_ACT_API = 'browserActApi';
+
+export const TASK_TYPE = Object.freeze({
+	TEMPLATE: 'TEMPLATE',
+	WORKFLOW: 'WORKFLOW',
+});
+
+export const TASK_TYPE_DEFAULT_VALUE = TASK_TYPE.TEMPLATE;
 
 // 23 hours
 export const QUERY_LIMIT = 16560;
@@ -35,4 +42,8 @@ export async function browserActRequest(
 		qs,
 		json: true,
 	});
+}
+
+export function isTemplateTask(type: string) {
+	return type === TASK_TYPE.TEMPLATE;
 }
