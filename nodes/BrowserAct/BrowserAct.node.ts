@@ -68,6 +68,7 @@ export class BrowserAct implements INodeType {
 				displayName: 'Search Workflows From',
 				name: 'type',
 				type: 'options',
+				description: 'Choose where to load workflows from',
 				options: [
 					{ name: 'Template Marketplace', value: TASK_TYPE.TEMPLATE },
 					{ name: 'My Workflows', value: TASK_TYPE.WORKFLOW },
@@ -82,7 +83,7 @@ export class BrowserAct implements INodeType {
 			},
 			{
 				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
-				displayName: 'Template',
+				displayName: 'Workflow',
 				name: 'templateId',
 				type: 'options',
 				typeOptions: { loadOptionsMethod: 'getTemplateWorkflows' },
