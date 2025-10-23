@@ -141,7 +141,7 @@ export class BrowserAct implements INodeType {
 				},
 			},
 			{
-				displayName: 'No Sign-in Retention',
+				displayName: 'Incognito Mode',
 				name: 'open_incognito_mode',
 				type: 'boolean',
 				default: false,
