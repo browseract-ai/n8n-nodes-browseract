@@ -143,12 +143,14 @@ export class BrowserAct implements INodeType {
 			{
 				displayName: 'No Sign-in Retention',
 				name: 'open_incognito_mode',
-				type: 'boolean', // boolean 在 n8n UI 中表现为 checkbox
-				default: false,
-				description: 'Whether to use privacy mode',
+				type: 'boolean',
+				default: true,
+				// eslint-disable-next-line n8n-nodes-base/node-param-description-boolean-without-whether
+				description:
+					'The workflow will use the browser when running tasks. When using Incognito mode, the browser data and account login status will not be saved; when not using Incognito mode, the browser data and account login status will be shared.',
 				displayOptions: {
 					show: {
-						operation: ['runWorkflow'], // 根据你的需要改成适用的 operation
+						operation: ['runWorkflow'],
 						type: [TASK_TYPE.WORKFLOW],
 					},
 				},
