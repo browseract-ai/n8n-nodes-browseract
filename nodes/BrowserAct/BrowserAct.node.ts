@@ -24,7 +24,7 @@ export class BrowserAct implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'BrowserAct',
 		name: 'browserAct',
-		icon: 'file:browserAct.svg',
+		icon: 'file:browseract.svg',
 		group: ['action'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
