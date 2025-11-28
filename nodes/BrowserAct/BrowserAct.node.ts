@@ -285,7 +285,7 @@ export class BrowserAct implements INodeType {
 					} else {
 						runTaskBody.workflow_id = this.getNodeParameter('workflowId', i) as string;
 						runTaskBody.open_incognito_mode =
-							this.getNodeParameter('open_incognito_mode', i) || false;
+							this.getNodeParameter('open_incognito_mode', i) || true;
 					}
 
 					const workflowConfig = this.getNodeParameter('workflowConfig', i) as any;
