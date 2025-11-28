@@ -144,7 +144,7 @@ export class BrowserAct implements INodeType {
 				displayName: 'Incognito Mode',
 				name: 'open_incognito_mode',
 				type: 'boolean',
-				default: false,
+				default: true,
 				// eslint-disable-next-line n8n-nodes-base/node-param-description-boolean-without-whether
 				description:
 					'The workflow will use the browser when running tasks. When using Incognito mode, the browser data and account login status will not be saved; when not using Incognito mode, the browser data and account login status will be shared.',
