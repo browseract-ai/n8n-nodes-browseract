@@ -367,7 +367,7 @@ export class BrowserAct implements INodeType {
 				if (needStop) {
 					await browserActRequest(this, {
 						method: 'PUT',
-						endpoint: `/${endpointType}/stop-task?task_id=${taskId}`,
+						endpoint: `/${endpointType}/stop-task?task_id=${taskId}&biz_code=101`,
 					});
 
 					taskDetail = await browserActRequest(this, {
