@@ -357,7 +357,7 @@ export class BrowserAct implements INodeType {
 						endpoint: `/${endpointType}/get-task?task_id=${taskId}`,
 					});
 
-					if (['finished', 'canceled', 'paused', 'failed'].includes(detail.status)) {
+					if (['finished', 'canceled', 'failed'].includes(detail.status)) {
 						taskDetail = detail;
 						needStop = false;
 						break;
