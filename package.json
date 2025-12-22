@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-browseract",
-	"version": "1.2.1",
+	"version": "1.2.2",
 	"description": "n8n nodes for BrowserAct",
 	"keywords": [
 		"n8n-community-node-package",
