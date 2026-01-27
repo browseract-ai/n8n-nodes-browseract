@@ -18,7 +18,7 @@ import {
 	TASK_TYPE,
 	TASK_TYPE_DEFAULT_VALUE,
 } from './helper';
-import { Template } from './types';
+import { Region, Template } from './types';
 
 export class BrowserAct implements INodeType {
 	description: INodeTypeDescription = {
@@ -141,17 +141,19 @@ export class BrowserAct implements INodeType {
 				},
 			},
 			{
-				displayName: 'Incognito Mode',
-				name: 'open_incognito_mode',
-				type: 'boolean',
-				default: true,
-				// eslint-disable-next-line n8n-nodes-base/node-param-description-boolean-without-whether
+				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
+				displayName: 'Proxy Region',
+				name: 'proxyRegion',
+				type: 'options',
 				description:
-					'The workflow will use the browser when running tasks. When using Incognito mode, the browser data and account login status will not be saved; when not using Incognito mode, the browser data and account login status will be shared.',
+					'Choose a proxy region. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				default: '',
+				typeOptions: { loadOptionsMethod: 'getRegionList' },
+				required: true,
 				displayOptions: {
 					show: {
 						operation: ['runWorkflow'],
-						type: [TASK_TYPE.WORKFLOW],
+						type: [TASK_TYPE.TEMPLATE],
 					},
 				},
 			},
@@ -253,6 +255,19 @@ export class BrowserAct implements INodeType {
 					value: template.templateId,
 				}));
 			},
+			async getRegionList(this: ILoadOptionsFunctions) {
+				const response = await browserActRequest(this, {
+					method: 'GET',
+					endpoint: '/workflow/get-region-list',
+				});
+
+				const regions: Region[] = response || [];
+
+				return regions.map((region) => ({
+					name: region.name,
+					value: region.code,
+				}));
+			},
 		},
 	};
 
@@ -282,10 +297,9 @@ export class BrowserAct implements INodeType {
 				if (resource === 'workflow' && operation === 'runWorkflow') {
 					if (isTemplateTask(type)) {
 						runTaskBody.workflow_template_id = this.getNodeParameter('templateId', i) as string;
+						runTaskBody.proxyRegion = this.getNodeParameter('proxyRegion', i) as string;
 					} else {
 						runTaskBody.workflow_id = this.getNodeParameter('workflowId', i) as string;
-						runTaskBody.open_incognito_mode =
-							this.getNodeParameter('open_incognito_mode', i) ?? true;
 					}
 
 					const workflowConfig = this.getNodeParameter('workflowConfig', i) as any;
