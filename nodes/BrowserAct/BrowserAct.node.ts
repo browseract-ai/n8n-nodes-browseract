@@ -71,7 +71,7 @@ export class BrowserAct implements INodeType {
 				description: 'Choose where to load workflows from',
 				options: [
 					{ name: 'Template Marketplace', value: TASK_TYPE.TEMPLATE },
-					{ name: 'My Workflows', value: TASK_TYPE.WORKFLOW },
+					{ name: 'My Workflows (With Published Version Only)', value: TASK_TYPE.WORKFLOW },
 				],
 				required: true,
 				default: TASK_TYPE_DEFAULT_VALUE,
