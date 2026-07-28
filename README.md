@@ -1,8 +1,8 @@
 # n8n Nodes - BrowserAct Integration
 
-This is an n8n community node that integrates [BrowserAct](https://www.browseract.com/) with your n8n workflows.
+This is an n8n community node that integrates [BrowserAct](https://www.browseract.com/) with your n8n bots.
 
-[BrowserAct](https://www.browseract.com/) is a platform for anyone to launch AI-powered crawling tasks with one click to automate web crawling, data extraction, and content generation—without coding. while [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation tool that allows you to connect various services.
+[BrowserAct](https://www.browseract.com/) is a platform for anyone to launch AI-powered crawling tasks with one click to automate web crawling, data extraction, and content generation—without coding. while [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) bot automation tool that allows you to connect various services.
 
 ## Table of Contents
 
@@ -23,8 +23,8 @@ This node supports a wide range of BrowserAct operations, including:
 
 - **Run Agent**
   - Start the specified Agent crawler task to obtain the crawled web page data or structured results.
-- **Run Workflow**
-  - Execute the specified BrowserAct Workflow, supporting multi-step task orchestration and data processing.
+- **Run Bot**
+  - Execute the specified BrowserAct Bot, supporting multi-step task orchestration and data processing.
 
 ## Credentials
 

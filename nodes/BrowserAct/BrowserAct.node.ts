@@ -47,7 +47,7 @@ export class BrowserAct implements INodeType {
 				name: 'resource',
 				type: 'options',
 				noDataExpression: true,
-				options: [{ name: 'Workflow', value: 'workflow' }],
+				options: [{ name: 'Bot', value: 'workflow' }],
 				default: 'workflow',
 			},
 			{
@@ -55,7 +55,7 @@ export class BrowserAct implements INodeType {
 				name: 'operation',
 				type: 'options',
 				noDataExpression: true,
-				options: [{ name: 'Run a Workflow', value: 'runWorkflow', action: 'Run a workflow' }],
+				options: [{ name: 'Run a Bot', value: 'runWorkflow', action: 'Run a bot' }],
 				default: 'runWorkflow',
 				displayOptions: {
 					show: {
@@ -65,13 +65,13 @@ export class BrowserAct implements INodeType {
 			},
 			{
 				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
-				displayName: 'Search Workflows From',
+				displayName: 'Search Bots From',
 				name: 'type',
 				type: 'options',
-				description: 'Choose where to load workflows from',
+				description: 'Choose where to load bots from',
 				options: [
 					{ name: 'Template Marketplace', value: TASK_TYPE.TEMPLATE },
-					{ name: 'My Workflows (With Published Version Only)', value: TASK_TYPE.WORKFLOW },
+					{ name: 'My Bots (With Published Version Only)', value: TASK_TYPE.WORKFLOW },
 				],
 				required: true,
 				default: TASK_TYPE_DEFAULT_VALUE,
@@ -83,14 +83,14 @@ export class BrowserAct implements INodeType {
 			},
 			{
 				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
-				displayName: 'Workflow',
+				displayName: 'Bot',
 				name: 'templateId',
 				type: 'options',
 				typeOptions: { loadOptionsMethod: 'getTemplateWorkflows' },
 				required: true,
 				default: '',
 				description:
-					'Select a workflow to run. Choose from the list, or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					'Select a bot to run. Choose from the list, or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				displayOptions: {
 					show: {
 						operation: ['runWorkflow'],
@@ -101,14 +101,14 @@ export class BrowserAct implements INodeType {
 
 			{
 				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options
-				displayName: 'Workflow',
+				displayName: 'Bot',
 				name: 'workflowId',
 				type: 'options',
 				typeOptions: { loadOptionsMethod: 'getWorkflows' },
 				required: true,
 				default: '',
 				description:
-					'Select a workflow to run. Choose from the list, or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					'Select a bot to run. Choose from the list, or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				displayOptions: {
 					show: {
 						operation: ['runWorkflow'],
@@ -117,7 +117,7 @@ export class BrowserAct implements INodeType {
 				},
 			},
 			{
-				displayName: 'Workflow Inputs',
+				displayName: 'Bot Inputs',
 				name: 'workflowConfig',
 				type: 'resourceMapper',
 				noDataExpression: true,
@@ -179,9 +179,9 @@ export class BrowserAct implements INodeType {
 					const templateId = this.getNodeParameter('templateId', 0) as string;
 
 					if (isTemplateTask(type) && !templateId) {
-						throw new NodeOperationError(this.getNode(), 'Please select a template workflow!');
+						throw new NodeOperationError(this.getNode(), 'Please select a template bot!');
 					} else if (!isTemplateTask(type) && !workflowId) {
-						throw new NodeOperationError(this.getNode(), 'Please select a workflow!');
+						throw new NodeOperationError(this.getNode(), 'Please select a bot!');
 					}
 
 					const response = await browserActRequest(this, {
@@ -305,7 +305,7 @@ export class BrowserAct implements INodeType {
 					const workflowConfig = this.getNodeParameter('workflowConfig', i) as any;
 
 					if (workflowConfig?.value == null) {
-						throw new NodeOperationError(this.getNode(), 'Please select a workflow to run', {
+						throw new NodeOperationError(this.getNode(), 'Please select a bot to run', {
 							itemIndex: i,
 						});
 					}
