@@ -1,8 +1,8 @@
 {
-	"node": "n8n-nodes-base.BrowserAct",
+	"node": "n8n-nodes-browseract.BrowserAct",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["CategoriesInNodeJson"],
+	"categories": ["Utility"],
 	"resources": {
 		"credentialDocumentation": [],
 		"primaryDocumentation": []
